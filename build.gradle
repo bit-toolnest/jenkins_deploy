@@ -1,0 +1,86 @@
+apply from: 'deps.gradle'
+
+task installDeps {
+    doLast {
+        deps.each { dep ->
+            def depPath = "${buildDir}/deps/${dep.repo}"
+            if (!file(depPath).exists()) {
+                println "Cloning dependency repo: ${dep.repo} from org ${org}"
+                exec {
+                    commandLine "git", "clone", "https://github.com/${org}/${dep.repo}.git", depPath
+                }
+            } else {
+                println "Updating dependency repo: ${dep.repo}"
+                exec {
+                    workingDir depPath
+                    commandLine "git", "pull"
+                }
+            }
+
+            // Handle version logic
+            if (dep.version == "latest") {
+                println "Fetching latest commit for ${dep.repo}"
+                exec {
+                    workingDir depPath
+                    commandLine "git", "checkout", "main"   // assumes main is default branch
+                }
+                exec {
+                    workingDir depPath
+                    commandLine "git", "pull"
+                }
+            } else {
+                println "Checking out version ${dep.version} for ${dep.repo}"
+                exec {
+                    workingDir depPath
+                    commandLine "git", "checkout", dep.version
+                }
+            }
+
+            println "Installing dependency: ${dep.repo}"
+            gradle.includedBuild(depPath).task(":install").execute()
+        }
+    }
+}
+
+// Separate task for uninstalling dependencies
+task uninstallDeps {
+    doLast {
+        println "Uninstalling dependencies..."
+        deps.each { dep ->
+            def depPath = "${buildDir}/deps/${dep.repo}"
+            if (file(depPath).exists()) {
+                println "Uninstalling dependency: ${dep.repo}"
+                // Option 1: Call its Gradle uninstall task
+                gradle.includedBuild(depPath).task(":uninstall").execute()
+
+                // Option 2: Directly call its uninstall.sh if you prefer
+                // exec {
+                //     commandLine "bash", "${depPath}/src/uninstall.sh"
+                // }
+            } else {
+                println "Dependency ${dep.repo} not found in ${depPath}, skipping..."
+            }
+        }
+    }
+}
+
+task install(dependsOn: installDeps) {
+    doLast {
+        println "Installing current tool..."
+        exec {
+            commandLine "bash", "src/install.sh"
+        }
+    }
+}
+
+
+// Main uninstall task depends on uninstallDeps
+task uninstall(dependsOn: uninstallDeps) {
+    doLast {
+        println "Uninstalling current tool..."
+        exec {
+            commandLine "bash", "src/uninstall.sh"
+        }
+    }
+}
+
