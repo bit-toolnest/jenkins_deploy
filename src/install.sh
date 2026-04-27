@@ -3,12 +3,12 @@ set -e
 
 echo "=== Jenkins + faasd + Docker Installer (Dependency Check Mode) ==="
 
-# 1) Verify Java 21 JDK
-if ! java -version 2>&1 | grep -q "21"; then
-  echo "❌ Java 21 JDK not found. Please install OpenJDK 21 before running this installer."
+# 1) Verify Java 17 JDK
+if ! java -version 2>&1 | grep -q "17"; then
+  echo "❌ Java 17 JDK not found. Please install OpenJDK 17 before running this installer."
   exit 1
 else
-  echo "✅ Java 21 JDK detected"
+  echo "✅ Java 17 JDK detected"
 fi
 
 # 2) Verify faasd
