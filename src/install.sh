@@ -11,12 +11,12 @@ else
   echo "✅ Java 17 JDK detected"
 fi
 
-# 2) Verify faasd
-if ! command -v faasd >/dev/null 2>&1; then
-  echo "❌ faasd not found. Please install faasd before running this installer."
+# 2) Verify faas-cli
+if ! command -v faas-cli >/dev/null 2>&1; then
+  echo "❌ faas-cli not found. Please install faas-cli before running this installer."
   exit 1
 else
-  echo "✅ faasd detected"
+  echo "✅ faas-cli detected"
 fi
 
 # 3) Verify Docker
