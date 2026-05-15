@@ -62,16 +62,16 @@ CRED_FILE=${GITHUB_CRED_FILE:-"$SCRIPT_DIR/github-creds.json"}
 if [[ -f "$CRED_FILE" ]]; then
   echo "➡ Reading GitHub credentials from $CRED_FILE..."
 
-  if [[ "$CRED_FILE" == *.json ]]; then
-    GITHUB_TOKEN_INPUT=$(jq -r '.token' "$CRED_FILE")
-    GITHUB_ADMIN_USER_INPUT=$(jq -r '.admin_user' "$CRED_FILE")
-    GITHUB_ORG_INPUT=$(jq -r '.org' "$CRED_FILE")
-  elif [[ "$CRED_FILE" == *.xml ]]; then
-    GITHUB_TOKEN_INPUT=$(xmlstarlet sel -t -v "//credentials/token" "$CRED_FILE")
-    GITHUB_ADMIN_USER_INPUT=$(xmlstarlet sel -t -v "//credentials/admin_user" "$CRED_FILE")
-    GITHUB_ORG_INPUT=$(xmlstarlet sel -t -v "//credentials/org" "$CRED_FILE")
-  else
-    echo "❌ Unsupported credential file format: $CRED_FILE"
+  if ! jq empty "$CRED_FILE" >/dev/null 2>&1; then
+    echo "❌ Invalid JSON format in $CRED_FILE"
+    exit 1
+  fi
+
+  GITHUB_TOKEN_INPUT=$(jq -r '.github_token // empty' "$CRED_FILE")
+  GITHUB_USER_INPUT=$(jq -r '.github_user // empty' "$CRED_FILE")
+
+  if [[ -z "$GITHUB_TOKEN_INPUT" || -z "$GITHUB_USER_INPUT" ]]; then
+    echo "❌ Missing GitHub credentials in $CRED_FILE"
     exit 1
   fi
 
@@ -81,28 +81,13 @@ if [[ -f "$CRED_FILE" ]]; then
 
   if [ -f "$CRED_FILE_SRC" ]; then
     echo "➡ Deploying Jenkins credentials.xml"
-    sed "s|\${GITHUB_ADMIN_USER}|$GITHUB_ADMIN_USER_INPUT|g; s|\${GITHUB_TOKEN}|$GITHUB_TOKEN_INPUT|g" \
-      "$CRED_FILE_SRC" | sudo tee "$CRED_FILE_DST" >/dev/null
+    sed "s|\${GITHUB_USER}|$GITHUB_USER_INPUT|g; \
+         s|\${GITHUB_TOKEN}|$GITHUB_TOKEN_INPUT|g" \
+         "$CRED_FILE_SRC" | sudo tee "$CRED_FILE_DST" >/dev/null
     sudo chown jenkins:jenkins "$CRED_FILE_DST"
     echo "✅ Jenkins credentials deployed"
   else
     echo "⏭ Skipping credentials deployment (file not found)"
-  fi
-
-  # --- 9) Deploy Organization Folder org-folder-config.xml ---
-  ORG_JOB_DIR="/var/lib/jenkins/jobs/${GITHUB_ORG_INPUT}-org"
-  ORG_JOB_FILE="$ORG_JOB_DIR/config.xml"
-  ORG_FILE_SRC="$SCRIPT_DIR/org-folder-config.xml"
-
-  if [ -f "$ORG_FILE_SRC" ]; then
-    echo "➡ Deploying Organization Folder config.xml for org: ${GITHUB_ORG_INPUT}"
-    sudo mkdir -p "$ORG_JOB_DIR"
-    sed "s|\${GITHUB_ORG}|$GITHUB_ORG_INPUT|g; s|\${CREDENTIALS_ID}|github-creds|g" \
-      "$ORG_FILE_SRC" | sudo tee "$ORG_JOB_FILE" >/dev/null
-    sudo chown -R jenkins:jenkins "$ORG_JOB_DIR"
-    echo "✅ Organization Folder job created at $ORG_JOB_DIR"
-  else
-    echo "⏭ Skipping Organization Folder deployment (file not found)"
   fi
 
   echo "➡ Restarting Jenkins to apply new configuration..."
