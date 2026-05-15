@@ -22,7 +22,6 @@ CRED_FILE=${GITHUB_CRED_FILE:-"$SCRIPT_DIR/jenkins-creds.json"}
 DSL_FILE="$SCRIPT_DIR/jobs.groovy"
 DSL_TARGET="/var/lib/jenkins/dsl/jobs.groovy"
 SEED_JOB_XML="$SCRIPT_DIR/seed-job.xml"
-SEED_JOB_NAME="seed-job"
 CREDENTIALS_ID="github-creds"
 
 # --- Install jq/xmlstarlet for credential parsing ---
@@ -40,6 +39,8 @@ fi
 JENKINS_USER_INPUT=$(jq -r '.jenkins_user // empty' "$CRED_FILE")
 JENKINS_TOKEN_INPUT=$(jq -r '.jenkins_token // empty' "$CRED_FILE")
 GITHUB_ORG_INPUT=$(jq -r '.github_org // empty' "$CRED_FILE")
+
+SEED_JOB_NAME="${GITHUB_ORG_INPUT}-seed"
 
 # --- CLI jar fallback ---
 if [ ! -f "$CLI_JAR" ]; then
