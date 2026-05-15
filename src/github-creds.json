@@ -1,5 +1,5 @@
 {
-  "gitgub_token": "ghp_yourtokenhere",
+  "github_token": "ghp_yourtokenhere",
   "github_user": "your-admin",
   "github_org": "your-org"
 }
