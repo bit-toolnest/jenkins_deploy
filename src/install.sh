@@ -69,6 +69,7 @@ if [[ -f "$CRED_FILE" ]]; then
 
   GITHUB_TOKEN_INPUT=$(jq -r '.github_token // empty' "$CRED_FILE")
   GITHUB_USER_INPUT=$(jq -r '.github_user // empty' "$CRED_FILE")
+  GITHUB_ORG_INPUT=$(jq -r '.github_org // empty' "$CRED_FILE")
 
   if [[ -z "$GITHUB_TOKEN_INPUT" || -z "$GITHUB_USER_INPUT" ]]; then
     echo "❌ Missing GitHub credentials in $CRED_FILE"
@@ -96,5 +97,32 @@ if [[ -f "$CRED_FILE" ]]; then
 else
   echo "⏭ Skipping GitHub credential and pipeline setup (no credential file found)"
 fi
+
+# --- 9) Deploy Organization Folder org-folder-config.xml ---
+ORG_JOB_DIR="/var/lib/jenkins/jobs/${GITHUB_ORG_INPUT}-org"
+ORG_JOB_FILE="$ORG_JOB_DIR/config.xml"
+ORG_FILE_SRC="$SCRIPT_DIR/default-config.xml"
+JENKINSFILE_PATH_INPUT="Jenkinsfile"
+
+# Create org-folder only if it doesn't exist
+if [ ! -d "$ORG_JOB_DIR" ]; then
+  echo "➡ Creating Organization Folder job for org: ${GITHUB_ORG_INPUT}"
+
+  if [ -f "$ORG_FILE_SRC" ]; then
+    echo "➡ Deploying Organization Folder config.xml for org: ${GITHUB_ORG_INPUT}"
+    sudo mkdir -p "$ORG_JOB_DIR"
+    sed "s|\${GITHUB_ORG}|${GITHUB_ORG_INPUT}|g; \
+        s|\${CREDENTIALS_ID}|github-creds|g; \
+        s|\${JENKINSFILE_PATH}|${JENKINSFILE_PATH_INPUT}|g" \
+        "$ORG_FILE_SRC" | sudo tee "$ORG_JOB_FILE" >/dev/null
+    sudo chown -R jenkins:jenkins "$ORG_JOB_DIR"
+    echo "✅ Organization Folder job created at $ORG_JOB_DIR"
+  else
+    echo "⏭ Skipping Organization Folder deployment (file not found)"
+  fi
+else
+  echo "⏭ Organization Folder job already exists, skipping"
+fi
+
 
 echo "🎯 Installer finished successfully (CI/CD safe, all dependencies verified)"
