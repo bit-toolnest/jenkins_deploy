@@ -21,13 +21,6 @@ organizationFolder("${GITHUB_ORG}-org") {
                 originPullRequestDiscovery {
                     strategyId(2)
                 }
-                // Discover PRs from forks
-                forkPullRequestDiscovery {
-                    strategyId(2)
-                    trust {
-                        permission()
-                    }
-                }
             }
         }
     }
@@ -42,8 +35,8 @@ organizationFolder("${GITHUB_ORG}-org") {
     orphanedItemStrategy {
         defaultOrphanedItemStrategy {
             pruneDeadBranches(true)
-            daysToKeep(-1)
-            numToKeep(-1)
+            daysToKeepStr("-1")
+            numToKeepStr("-1")
             abortBuilds(false)
         }
     }

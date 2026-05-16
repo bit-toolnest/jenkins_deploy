@@ -20,7 +20,6 @@ JENKINSFILE_PATH_INPUT="Jenkinsfile"
 
 CRED_FILE=${GITHUB_CRED_FILE:-"$SCRIPT_DIR/jenkins-creds.json"}
 DSL_FILE="$SCRIPT_DIR/jobs.groovy"
-DSL_TARGET="/var/lib/jenkins/dsl/jobs.groovy"
 SEED_JOB_XML="$SCRIPT_DIR/seed-job.xml"
 CREDENTIALS_ID="github-creds"
 
@@ -65,12 +64,11 @@ fi
 
 # --- Seed job XML ---
 echo "ℹ️ Ensure the Job DSL plugin is installed in Jenkins before running this script."
-sed "s|\${GITHUB_ORG}|$GITHUB_ORG_INPUT|g; \
-     s|\${CREDENTIALS_ID}|$CREDENTIALS_ID|g; \
-     s|\${JENKINSFILE_PATH}|$JENKINSFILE_PATH_INPUT|g" \
-     "$DSL_FILE" | sudo tee "$DSL_TARGET" >/dev/null
-
-sudo chown jenkins:jenkins "$DSL_TARGET"
+DSL_CONTENT=$(sed \
+    -e "s|\${GITHUB_ORG}|$GITHUB_ORG_INPUT|g" \
+    -e "s|\${CREDENTIALS_ID}|$CREDENTIALS_ID|g" \
+    -e "s|\${JENKINSFILE_PATH}|$JENKINSFILE_PATH_INPUT|g" \
+    "$DSL_FILE")
 
 cat > "$SEED_JOB_XML" <<EOF
 <project>
@@ -78,8 +76,11 @@ cat > "$SEED_JOB_XML" <<EOF
   <description>Seed job to run Job DSL</description>
   <builders>
     <javaposse.jobdsl.plugin.ExecuteDslScripts>
-      <targets>${DSL_TARGET}</targets>
-      <usingScriptText>false</usingScriptText>
+      <scriptText><![CDATA[
+      $DSL_CONTENT
+      ]]></scriptText>
+
+      <usingScriptText>true</usingScriptText>
       <ignoreExisting>false</ignoreExisting>
       <removedJobAction>DELETE</removedJobAction>
       <removedViewAction>DELETE</removedViewAction>
