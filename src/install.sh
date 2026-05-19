@@ -138,7 +138,7 @@ if [ -f "$BRANCH_PROTECTION_SRC" ]; then
   sudo chown jenkins:jenkins "$BRANCH_PROTECTION_DST"
   echo "✅ branch-protection.sh deployed at $BRANCH_PROTECTION_DST"
 else
-  echo "⏭ Skipping branch-protection.sh deployment (file not found)"
+  echo "⏭ Skipping faasrepo-init.sh deployment (file not found)"
 fi
 
 
