@@ -136,7 +136,7 @@ if [ -f "$BRANCH_PROTECTION_SRC" ]; then
   sudo cp "$BRANCH_PROTECTION_SRC" "$BRANCH_PROTECTION_DST"
   sudo chmod +x "$BRANCH_PROTECTION_DST"
   sudo chown jenkins:jenkins "$BRANCH_PROTECTION_DST"
-  echo "✅ branch-protection.sh deployed at $BRANCH_PROTECTION_DST"
+  echo "✅ faasrepo-init.sh deployed at $BRANCH_PROTECTION_DST"
 else
   echo "⏭ Skipping faasrepo-init.sh deployment (file not found)"
 fi
