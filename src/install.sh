@@ -6,14 +6,13 @@ echo "=== Jenkins + faasd + Docker Installer (CI/CD Safe Mode) ==="
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # --- Centralized Variables ---
 JENKINSFILE_PATH_INPUT="Jenkinsfile"
-
 CRED_FILE=${GITHUB_CRED_FILE:-"$SCRIPT_DIR/github-creds.json"}
 CRED_FILE_SRC="$SCRIPT_DIR/credentials.xml"
 CRED_FILE_DST="/var/lib/jenkins/credentials.xml"
-
 CREDENTIALS_ID="github-creds"
-
 ORG_FILE_SRC="$SCRIPT_DIR/default-config.xml"
+BRANCH_PROTECTION_SRC="$SCRIPT_DIR/faasrepo-init.sh"
+BRANCH_PROTECTION_DST="/opt/scripts/faasrepo-init.sh"
 # ORG_JOB_DIR and ORG_JOB_FILE will be defined later after parsing GITHUB_ORG_INPUT
 
 # --- Helper Functions ---
@@ -128,6 +127,20 @@ if [ -f "$ORG_FILE_SRC" ]; then
 else
   echo "⏭ Skipping Organization Folder deployment (file not found)"
 fi
+
+# --- 10) Deploy faasrepo-init.sh ---
+echo "➡ Deploying faasrepo-init.sh to Jenkins scripts directory..."
+
+if [ -f "$BRANCH_PROTECTION_SRC" ]; then
+  sudo mkdir -p "$(dirname "$BRANCH_PROTECTION_DST")"
+  sudo cp "$BRANCH_PROTECTION_SRC" "$BRANCH_PROTECTION_DST"
+  sudo chmod +x "$BRANCH_PROTECTION_DST"
+  sudo chown jenkins:jenkins "$BRANCH_PROTECTION_DST"
+  echo "✅ branch-protection.sh deployed at $BRANCH_PROTECTION_DST"
+else
+  echo "⏭ Skipping branch-protection.sh deployment (file not found)"
+fi
+
 
 
 
