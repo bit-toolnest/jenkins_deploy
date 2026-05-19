@@ -36,8 +36,17 @@ organizationFolder("${GITHUB_ORG}-org") {
         defaultOrphanedItemStrategy {
             pruneDeadBranches(true)
             daysToKeepStr("-1")
-            numToKeepStr("-1")
+            numToKeepStr("20")   // keep last 20 builds per branch
             abortBuilds(false)
+        }
+    }
+
+    // Enable triggers so Jenkins rescans and builds on push events
+    triggers {
+        // Periodic rescan every 15 minutes
+        periodicFolderTrigger {
+            spec("H/15 * * * *")
+            interval("900000")
         }
     }
 }
