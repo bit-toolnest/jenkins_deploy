@@ -39,11 +39,12 @@ install_pkg() {
 }
 
 # --- 1) Verify Java 17 JDK ---
-if ! java -version 2>&1 | grep -q 'version "17'; then
-  echo "❌ Java 17 JDK not found. Install OpenJDK 17 first."
+JAVA_VERSION=$(java -version 2>&1 | awk -F '"' '/version/ {print $2}' | cut -d. -f1)
+if [ "$JAVA_VERSION" -lt 17 ]; then
+  echo "❌ Java 17+ JDK required. Install OpenJDK 17 or newer."
   exit 1
 else
-  echo "✅ Java 17 JDK detected"
+  echo "✅ Java $JAVA_VERSION JDK detected"
 fi
 
 # --- 2) Verify faas-cli ---
