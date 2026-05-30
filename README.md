@@ -100,6 +100,115 @@ Gradle tasks wrap these scripts:
 
 ---
 
+## 📧 Jenkins SMTP Notification Setup
+
+This project uses Jenkins `emailext` notifications in pipeline jobs.  
+To enable build status emails, configure SMTP settings in Jenkins.
+
+### 🔹 Jenkins SMTP Configuration
+
+Open Jenkins:
+
+Manage Jenkins → System
+
+Configure the following under:
+
+### 1️⃣ E-mail Notification
+
+| Field | Value |
+|---|---|
+| SMTP server | smtp.gmail.com |
+| Use SMTP Authentication | ✅ Enabled |
+| User Name | Your Gmail address |
+| Password | Gmail App Password |
+| Use SSL | ✅ Enabled |
+| Use TLS | ❌ Disabled |
+| SMTP Port | 465 |
+| Charset | UTF-8 |
+
+After configuration:
+
+- Save settings
+- Use **Test configuration by sending test e-mail**
+- Verify email delivery
+
+---
+
+### 2️⃣ Extended E-mail Notification
+
+This repository uses:
+
+```groovy
+emailext(...)
+```
+
+inside Jenkins pipelines, therefore **Extended E-mail Notification** must also be configured.
+
+Configure:
+
+| Field | Value |
+|---|---|
+| SMTP server | smtp.gmail.com |
+| SMTP Port | 465 |
+| Credentials | Gmail SMTP Credential |
+| Use SSL | ✅ Enabled |
+| Use TLS | ❌ Disabled |
+| Use OAuth 2.0 | ❌ Disabled |
+
+---
+
+### 🔹 Adding Gmail SMTP Credentials
+
+Under:
+
+Extended E-mail Notification → Credentials
+
+Create a new credential:
+
+| Field | Value |
+|---|---|
+| Kind | Username with password |
+| Scope | Global |
+| Username | Your Gmail address |
+| Password | Gmail App Password |
+| ID | gmail-smtp |
+| Description | Gmail SMTP |
+
+Then select:
+
+```text
+gmail-smtp
+```
+
+from the credentials dropdown.
+
+---
+
+### 🔹 Generate Gmail App Password
+
+Google requires an **App Password** instead of the normal Gmail password.
+
+Steps:
+
+1. Enable 2-Step Verification in Google Account
+2. Open Google Account → Security
+3. Open:
+   App Passwords
+4. Create a new app password for:
+   Mail
+5. Use the generated 16-character password in Jenkins SMTP configuration
+
+---
+
+### 🔹 Example Jenkinsfile Notification
+
+1. Commit a small change
+2. Push to GitHub
+3. Let Jenkins run
+4. Verify the receiving of mails 
+
+---
+
 ## 📈 Benefits
 
 - Consistent repo structure across all tools  
