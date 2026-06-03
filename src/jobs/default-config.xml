@@ -51,7 +51,7 @@
   <orphanedItemStrategy
     class="com.cloudbees.hudson.plugins.folder.computed.DefaultOrphanedItemStrategy">
 
-    <pruneDeadBranches>true</pruneDeadBranches>
+    <pruneDeadBranches>false</pruneDeadBranches>
     <daysToKeep>-1</daysToKeep>
     <numToKeep>20</numToKeep> <!-- keep last 20 builds per branch -->
     <abortBuilds>false</abortBuilds>
