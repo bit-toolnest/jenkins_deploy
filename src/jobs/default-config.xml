@@ -73,13 +73,20 @@
       <credentialsId>${CREDENTIALS_ID}</credentialsId>
       <enableAvatar>false</enableAvatar>
       <traits>
-        <!-- Discover branches -->
+        <!-- Discover only main branch -->
         <org.jenkinsci.plugins.github__branch__source.BranchDiscoveryTrait>
-          <strategyId>1</strategyId>
+          <strategyId>1</strategyId> <!-- build branch heads -->
         </org.jenkinsci.plugins.github__branch__source.BranchDiscoveryTrait>
+      
+        <!-- Restrict branch discovery to main -->
+        <org.jenkinsci.plugins.github__branch__source.WildcardSCMHeadFilterTrait>
+          <includes>main</includes>
+          <excludes>*</excludes>
+        </org.jenkinsci.plugins.github__branch__source.WildcardSCMHeadFilterTrait>
+      
         <!-- Discover pull requests from origin -->
         <org.jenkinsci.plugins.github__branch__source.OriginPullRequestDiscoveryTrait>
-          <strategyId>2</strategyId>
+          <strategyId>2</strategyId> <!-- build PRs merged with target branch -->
         </org.jenkinsci.plugins.github__branch__source.OriginPullRequestDiscoveryTrait>
       </traits>
     </org.jenkinsci.plugins.github__branch__source.GitHubSCMNavigator>
