@@ -1,9 +1,7 @@
-
 // GitHub Organization Folder job
 organizationFolder("${GITHUB_ORG}-org") {
 
     description("GitHub Organization Folder for ${GITHUB_ORG} — scans all repos")
-
     displayName("${GITHUB_ORG} Organization")
 
     organizations {
@@ -13,11 +11,15 @@ organizationFolder("${GITHUB_ORG}-org") {
             credentialsId("${CREDENTIALS_ID}")
 
             traits {
-                // Discover branches
+                // Discover branches (but restrict to main only)
                 branchDiscovery {
-                    strategyId(1)
+                    strategyId(1) // build branch heads
                 }
-                // Discover PRs from same repo
+                headWildcardFilter {
+                    includes("main")
+                    excludes("*")
+                }
+                // Discover PRs from same repo, build merged with target branch
                 originPullRequestDiscovery {
                     strategyId(2)
                 }
@@ -31,17 +33,17 @@ organizationFolder("${GITHUB_ORG}-org") {
         }
     }
 
-    // Orphaned item strategy (clean up dead repos/branches)
+    // Orphaned item strategy (keep jobs visible, don’t prune immediately)
     orphanedItemStrategy {
         defaultOrphanedItemStrategy {
-            pruneDeadBranches(true)
+            pruneDeadBranches(false)
             daysToKeepStr("-1")
             numToKeepStr("20")   // keep last 20 builds per branch
             abortBuilds(false)
         }
     }
 
-    // Enable triggers so Jenkins rescans and builds on push events
+    // Enable triggers so Jenkins rescans and builds on push/PR events
     triggers {
         // Periodic rescan every 15 minutes
         periodicFolderTrigger {
