@@ -118,4 +118,14 @@ if ! java -jar "$CLI_JAR" -s "$JENKINS_URL" -http \
   exit 1
 fi
 
+# --- Verify org-folder creation ---
+if java -jar "$CLI_JAR" -s "$JENKINS_URL" -http \
+     -auth "$JENKINS_USER:$JENKINS_PASS" list-jobs | grep -q "^${GITHUB_ORG_INPUT}-org$"; then
+  echo "✅ OrganizationFolder ${GITHUB_ORG_INPUT}-org created successfully"
+else
+  echo "❌ OrganizationFolder ${GITHUB_ORG_INPUT}-org not found after seed job run"
+  exit 1
+fi
+
+
 echo "✅ Seed job executed, org-folder created"
