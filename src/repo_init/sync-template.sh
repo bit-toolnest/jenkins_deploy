@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-REPO="$1"          # current repo name (e.g. my-tool)
-ORG="$2"           # your org (e.g. bit-template)
-TEMPLATE_REPO="$3" # full GitHub link (e.g. https://github.com/other-org/tool-template.git)
+REPO="$1"
+ORG="$2"
+TEMPLATE_REPO="$3"
 
 ADMIN_USER="${ADMIN_USER:-}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
@@ -18,20 +18,31 @@ if [ -z "$ADMIN_USER" ] || [ -z "$GITHUB_TOKEN" ]; then
     exit 1
 fi
 
-# Derive remote name from URL
 TEMPLATE_NAME=$(basename -s .git "$TEMPLATE_REPO")
 
 echo "[INFO] Syncing changes from template: $TEMPLATE_NAME"
 git fetch "$TEMPLATE_NAME" main
-git subtree pull --prefix=. "$TEMPLATE_NAME" main --squash
+
+# Try subtree pull first
+if ! git subtree pull --prefix=. "$TEMPLATE_NAME" main --squash; then
+    echo "[WARN] Subtree pull failed, trying squash merge"
+    if ! git merge --squash --allow-unrelated-histories "$TEMPLATE_NAME/main"; then
+        echo "[ERROR] Merge failed, conflicts must be resolved"
+        exit 1
+    fi
+fi
 
 git config --global user.name "Jenkins Automation"
 git config --global user.email "jenkins@${ORG}.local"
 
-git add .
+# Commit only if staged changes exist
 if ! git diff --cached --quiet; then
     git commit -m "Sync changes from ${TEMPLATE_NAME}"
-    git push "https://${ADMIN_USER}:${GITHUB_TOKEN}@github.com/${ORG}/${REPO}.git" HEAD:main || true
+    if ! git push "https://${ADMIN_USER}:${GITHUB_TOKEN}@github.com/${ORG}/${REPO}.git" HEAD:main; then
+        echo "[ERROR] Push failed"
+        exit 1
+    fi
+    echo "[SUCCESS] Template synced and pushed"
 else
-    echo "[INFO] No changes to commit after syncing template."
+    echo "[SUCCESS] No changes to commit"
 fi
