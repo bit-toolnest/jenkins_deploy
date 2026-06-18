@@ -28,15 +28,16 @@ organizationFolder("${GITHUB_ORG}-org") {
     }
 
     projectFactories {
-        workflowBranchProjectFactory {
-            scriptPath("${JENKINSFILE_PATH}")
+        factory {
+            workflowBranchProjectFactory {
+                scriptPath("${JENKINSFILE_PATH}")
+            }
         }
     }
 
-    // Orphaned item strategy (keep jobs visible, don’t prune immediately)
     orphanedItemStrategy {
         defaultOrphanedItemStrategy {
-            pruneDeadBranches(false)
+            pruneDeadBranches(true)
             daysToKeepStr("-1")
             numToKeepStr("20")   // keep last 20 builds per branch
             abortBuilds(false)
