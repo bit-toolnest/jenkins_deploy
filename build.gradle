@@ -3,45 +3,41 @@ apply from: 'deps.gradle'
 task installDeps {
     doLast {
         deps.each { dep ->
-            def depPath = "${buildDir}/deps/${dep.repo}"
+            // Resolve depsDir: prefer parentDepsDir if passed
+            def depsDir = project.hasProperty('parentDepsDir') 
+                ? file(project.property('parentDepsDir')) 
+                : file("${rootProject.buildDir}/deps")
 
-            if (!file(depPath).exists()) {
-                println "Cloning dependency repo: ${dep.repo} from org ${org}"
+            def depBase = "${depsDir}/${dep.repo}"
+            def depZip = "${depBase}.zip"
+            def branchOrTag = dep.version == "latest" ? "main" : dep.version
+
+            depsDir.mkdirs()
+
+            if (!file(depBase).exists()) {
+                println "Downloading dependency repo: ${dep.repo} from org ${org}"
                 exec {
-                    commandLine "git", "clone", "https://github.com/${org}/${dep.repo}.git", depPath
+                    commandLine "curl", "-L",
+                        "https://github.com/${org}/${dep.repo}/archive/${branchOrTag}.zip",
+                        "-o", depZip
                 }
-            } else {
-                println "Updating dependency repo: ${dep.repo}"
-                exec {
-                    workingDir depPath
-                    commandLine "git", "pull"
+
+                project.copy {
+                    from zipTree(depZip)
+                    into depsDir
+                }
+
+                def extracted = file("${depsDir}/${dep.repo}-${branchOrTag}")
+                if (extracted.exists()) {
+                    extracted.renameTo(file(depBase))
                 }
             }
 
-            // Handle version logic
-            if (dep.version == "latest") {
-                println "Fetching latest commit for ${dep.repo}"
-                exec {
-                    workingDir depPath
-                    commandLine "git", "checkout", "main"   // assumes main is default branch
-                }
-                exec {
-                    workingDir depPath
-                    commandLine "git", "pull"
-                }
-            } else {
-                println "Checking out version ${dep.version} for ${dep.repo}"
-                exec {
-                    workingDir depPath
-                    commandLine "git", "checkout", dep.version
-                }
-            }
-
-            // Instead of calling install.sh directly, run Gradle install task
             println "Installing dependency via Gradle: ${dep.repo}"
             exec {
-                workingDir depPath
-                commandLine "./gradlew", "install"
+                workingDir depBase
+                // Always propagate parentDepsDir down
+                commandLine "./gradlew", "install", "-PparentDepsDir=${depsDir}"
             }
         }
     }
@@ -52,15 +48,6 @@ task install(dependsOn: installDeps) {
         println "Installing current tool..."
         exec {
             commandLine "bash", "src/install.sh"
-        }
-    }
-}
-
-task add_job {
-    doLast {
-        println "Installing current tool..."
-        exec {
-            commandLine "bash", "src/add-job.sh"
         }
     }
 }
@@ -109,6 +96,30 @@ task cleanBuildDir {
             delete buildDirFile
         } else {
             println "Build directory does not exist, nothing to delete."
+        }
+    }
+}
+
+// -------------------- TEST SANDBOX --------------------
+task testSandbox {
+    description = "Run installer tests inside Docker sandbox via test/test_vector.sh"
+    group = "verification"
+
+    doLast {
+        println "Running sandbox tests..."
+        def testScript = file("${rootProject.projectDir}/test/test_vector.sh")
+        def envScript = file("${rootProject.projectDir}/set_env.sh")
+
+        if (!testScript.exists()) {
+            throw new GradleException("test.sh not found at ${testScript}")
+        }
+        if (!envScript.exists()) {
+            throw new GradleException("set_env.sh not found at ${envScript}")
+        }
+
+        // Source set_env.sh and then run test.sh in one shell
+        exec {
+            commandLine "bash", "-c", "source ${envScript.absolutePath} && bash ${testScript.absolutePath}"
         }
     }
 }
