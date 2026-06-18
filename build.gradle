@@ -100,6 +100,20 @@ task cleanBuildDir {
     }
 }
 
+// -------------------- ADD JOB --------------------
+task addJob {
+    description = "Run src/add_job.sh to create/update Jenkins seed job"
+    group = "jenkins"
+
+    doLast {
+        println "Executing add_job.sh..."
+        exec {
+            commandLine "bash", "src/add_job.sh"
+        }
+    }
+}
+
+
 // -------------------- TEST SANDBOX --------------------
 task testSandbox {
     description = "Run installer tests inside Docker sandbox via test/test_vector.sh"
