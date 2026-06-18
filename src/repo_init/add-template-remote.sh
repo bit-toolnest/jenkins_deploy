@@ -26,22 +26,25 @@ git remote add "$TEMPLATE_NAME" "$TEMPLATE_REPO" || true
 git config --global user.name "Jenkins Automation"
 git config --global user.email "jenkins@${ORG}.local"
 
-# Fetch template branch
 git fetch "$TEMPLATE_NAME" main
 
-# Try subtree add if not already linked
-if ! git log | grep -q "subtree"; then
-    echo "[INFO] Linking template with subtree add..."
-    if ! git subtree add --prefix=. "$TEMPLATE_NAME" main --squash --allow-unrelated-histories; then
-        echo "[WARN] Subtree add failed, falling back to squash merge"
-        git merge --squash --allow-unrelated-histories "$TEMPLATE_NAME/main" || true
+# Try subtree add or squash merge
+if ! git subtree add --prefix=. "$TEMPLATE_NAME" main --squash --allow-unrelated-histories 2>/dev/null; then
+    echo "[WARN] Subtree add failed, trying squash merge"
+    if ! git merge --squash --allow-unrelated-histories "$TEMPLATE_NAME/main"; then
+        echo "[ERROR] Merge failed, conflicts must be resolved"
+        exit 1
     fi
 fi
 
-# Commit only if changes are staged
+# Commit only if staged changes exist
 if ! git diff --cached --quiet; then
     git commit -m "Link template remote: ${TEMPLATE_NAME}"
-    git push "https://${ADMIN_USER}:${GITHUB_TOKEN}@github.com/${ORG}/${REPO}.git" HEAD:main || true
+    if ! git push "https://${ADMIN_USER}:${GITHUB_TOKEN}@github.com/${ORG}/${REPO}.git" HEAD:main; then
+        echo "[ERROR] Push failed"
+        exit 1
+    fi
+    echo "[SUCCESS] Template linked and pushed"
 else
-    echo "[INFO] No changes to commit after linking template."
+    echo "[SUCCESS] No changes to commit"
 fi
