@@ -12,7 +12,7 @@ organizationFolder("${GITHUB_ORG}-org") {
 
             traits {
                 // Discover branches (but restrict to main only)
-                branchDiscovery {
+                gitHubBranchDiscovery {
                     strategyId(1) // build branch heads
                 }
                 headWildcardFilter {
@@ -20,7 +20,7 @@ organizationFolder("${GITHUB_ORG}-org") {
                     excludes("*")
                 }
                 // Discover PRs from same repo, build merged with target branch
-                originPullRequestDiscovery {
+                gitHubPullRequestDiscovery {
                     strategyId(2)
                 }
             }
@@ -28,8 +28,7 @@ organizationFolder("${GITHUB_ORG}-org") {
     }
 
     projectFactories {
-        factory {
-            workflowBranchProjectFactory {
+            workflowMultiBranchProjectFactory {
                 scriptPath("${JENKINSFILE_PATH}")
             }
         }
@@ -48,7 +47,6 @@ organizationFolder("${GITHUB_ORG}-org") {
     triggers {
         // Periodic rescan every 15 minutes
         periodicFolderTrigger {
-            spec("H/15 * * * *")
             interval("900000")
         }
     }
