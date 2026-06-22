@@ -138,3 +138,71 @@ task testSandbox {
     }
 }
 
+// -------------------- SYNC TEMPLATE --------------------
+task syncTemplate {
+    description = "Sync template repo into current project"
+    group = "automation"
+
+    doLast {
+        def repo = System.getenv("REPO")
+        def org = System.getenv("ORG")
+        def templateRepo = System.getenv("TEMPLATE_REPO")
+        def adminUser = System.getenv("ADMIN_USER")
+        def githubToken = System.getenv("GITHUB_TOKEN")
+
+        if (!repo || !org || !templateRepo || !adminUser || !githubToken) {
+            throw new GradleException("Missing required environment variables for syncTemplate")
+        }
+
+        def templateName = templateRepo.replaceAll(/\.git$/, "").tokenize("/").last()
+
+        println "[INFO] Adding remote for template: ${templateName}"
+        exec {
+            commandLine "git", "remote", "add", templateName, templateRepo
+        }
+        // ignore if already exists
+        exec {
+            commandLine "git", "fetch", templateName, "main"
+        }
+
+        // Try subtree add first
+        def subtreeAdd = exec {
+            ignoreExitValue true
+            commandLine "git", "subtree", "add", "--prefix=.", templateName, "main", "--squash"
+        }
+        if (subtreeAdd.exitValue != 0) {
+            println "[WARN] Subtree add failed, trying squash merge"
+            def merge = exec {
+                ignoreExitValue true
+                commandLine "git", "merge", "--squash", "--allow-unrelated-histories", "${templateName}/main"
+            }
+            if (merge.exitValue != 0) {
+                throw new GradleException("Merge failed, conflicts must be resolved")
+            }
+        }
+
+        // Commit if staged changes exist
+        def diff = exec {
+            ignoreExitValue true
+            commandLine "git", "diff", "--cached", "--quiet"
+        }
+        if (diff.exitValue != 0) {
+            exec {
+                commandLine "git", "commit", "-m", "Link template remote: ${templateName}"
+            }
+            def pushUrl = "https://${adminUser}:${githubToken}@github.com/${org}/${repo}.git"
+            def push = exec {
+                ignoreExitValue true
+                commandLine "git", "push", pushUrl, "HEAD:main"
+            }
+            if (push.exitValue != 0) {
+                throw new GradleException("Push failed")
+            }
+            println "[SUCCESS] Template linked and pushed"
+        } else {
+            println "[SUCCESS] No changes to commit"
+        }
+    }
+}
+
+
