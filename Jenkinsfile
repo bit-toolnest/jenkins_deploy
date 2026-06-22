@@ -40,18 +40,6 @@ pipeline {
             }
         }
 
-        stage('Sync Template') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'github-creds',
-                    usernameVariable: 'ADMIN_USER',
-                    passwordVariable: 'GITHUB_TOKEN'
-                )]) {
-                    sh "/opt/scripts/sync-template.sh ${env.REPO} ${env.ORG} ${env.TEMPLATE_REPO}"
-                }
-            }
-        }
-
         stage('Sandbox Test') {
             steps {
                 sh './gradlew testSandbox'
