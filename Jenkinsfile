@@ -32,7 +32,7 @@ pipeline {
                 )]) {
                     sh """
                         /opt/scripts/gradlew-permission.sh ${env.REPO} ${env.ORG}
-			            /opt/scripts/add-template-remote.sh ${env.REPO} ${env.ORG} ${env.TEMPLATE_REPO}
+			            ./gradlew linkTemplateRepo
                         /opt/scripts/remove-flag.sh ${env.REPO} ${env.ORG}
                         /opt/scripts/branch-protection.sh ${env.REPO} ${env.ORG}
                     """
@@ -40,17 +40,21 @@ pipeline {
             }
         }
 
-        stage('Sync Template') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'github-creds',
-                    usernameVariable: 'ADMIN_USER',
-                    passwordVariable: 'GITHUB_TOKEN'
-                )]) {
-                    sh "/opt/scripts/sync-template.sh ${env.REPO} ${env.ORG} ${env.TEMPLATE_REPO}"
-                }
-            }
-        }
+		stage('Sync Template') {
+		    when {
+		        expression { return false } // always skip
+		    }
+		    steps {
+		        withCredentials([usernamePassword(
+		            credentialsId: 'github-creds',
+		            usernameVariable: 'ADMIN_USER',
+		            passwordVariable: 'GITHUB_TOKEN'
+		        )]) {
+		            sh "./gradlew syncTemplate"
+		        }
+		    }
+		}
+
 
         stage('Sandbox Test') {
             steps {

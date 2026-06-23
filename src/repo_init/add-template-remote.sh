@@ -28,13 +28,9 @@ git config --global user.email "jenkins@${ORG}.local"
 
 git fetch "$TEMPLATE_NAME" main
 
-# Try subtree add or squash merge
-if ! git subtree add --prefix=. "$TEMPLATE_NAME" main --squash --allow-unrelated-histories 2>/dev/null; then
+# Try subtree add or fallback to squash merge
+if ! git subtree add --prefix=. "$TEMPLATE_NAME" main --squash 2>/dev/null; then
     echo "[WARN] Subtree add failed, trying squash merge"
-    if ! git merge --squash --allow-unrelated-histories "$TEMPLATE_NAME/main"; then
-        echo "[ERROR] Merge failed, conflicts must be resolved"
-        exit 1
-    fi
 fi
 
 # Commit only if staged changes exist
