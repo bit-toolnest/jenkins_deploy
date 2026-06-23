@@ -32,7 +32,7 @@ organizationFolder("${GITHUB_ORG}-org") {
                 scriptPath("${JENKINSFILE_PATH}")
             }
         }
-    }
+
 
     orphanedItemStrategy {
         defaultOrphanedItemStrategy {
