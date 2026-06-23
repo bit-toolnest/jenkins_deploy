@@ -1,5 +1,23 @@
 apply from: 'deps.gradle'
 
+// -------------------- ENVIRONMENT --------------------
+task prepareEnv {
+    description = "Source set_env.sh to export environment variables"
+    group = "setup"
+
+    doLast {
+        def envScript = file("${rootProject.projectDir}/set_env.sh")
+        if (!envScript.exists()) {
+            throw new GradleException("set_env.sh not found at ${envScript}")
+        }
+        println "[INFO] Sourcing environment script: ${envScript}"
+        // Run once to ensure variables are exported in subshells
+        exec {
+            commandLine "bash", "-c", "source ${envScript.absolutePath}"
+        }
+    }
+}
+
 task installDeps {
     doLast {
         deps.each { dep ->
@@ -100,28 +118,14 @@ task cleanBuildDir {
     }
 }
 
-// -------------------- ADD JOB --------------------
-task addJob {
-    description = "Run src/add_job.sh to create/update Jenkins seed job"
-    group = "jenkins"
-
-    doLast {
-        println "Executing add_job.sh..."
-        exec {
-            commandLine "bash", "src/add_job.sh"
-        }
-    }
-}
-
-
 // -------------------- TEST SANDBOX --------------------
 task testSandbox {
-    description = "Run installer tests inside Docker sandbox via test/test_vector.sh"
+    description = "Run installer tests inside Docker sandbox via test/test_suite.sh"
     group = "verification"
 
     doLast {
         println "Running sandbox tests..."
-        def testScript = file("${rootProject.projectDir}/test/test_vector.sh")
+        def testScript = file("${rootProject.projectDir}/test/test_suite.sh")
         def envScript = file("${rootProject.projectDir}/set_env.sh")
 
         if (!testScript.exists()) {
@@ -137,4 +141,155 @@ task testSandbox {
         }
     }
 }
+
+// Common helper
+def resolveOrgRepo = {
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine "git", "remote", "get-url", "origin"
+        standardOutput = stdout
+    }
+    def originUrl = stdout.toString().trim()
+    def matcher = originUrl =~ /github\.com[:\/]([^\/]+)\/(.+?)(\.git)?$/
+    if (!matcher.matches()) {
+        throw new GradleException("Unable to parse org/repo from origin URL: ${originUrl}")
+    }
+    [org: matcher[0][1], repo: matcher[0][2]]
+}
+
+task linkTemplateRepo(dependsOn: prepareEnv) {
+    group = "automation"
+    description = "Link a template repository into the current project"
+
+    doLast {
+        def templateRepo = System.getenv("TEMPLATE_REPO")
+        def adminUser    = System.getenv("ADMIN_USER")
+        def githubToken  = System.getenv("GITHUB_TOKEN")
+
+        if (!templateRepo || !adminUser || !githubToken) {
+            throw new GradleException("Missing required environment variables")
+        }
+
+        def resolved = resolveOrgRepo()
+        def org  = resolved.org
+        def repo = resolved.repo
+
+        def templateName = templateRepo.replaceAll(/\.git$/, "").tokenize("/").last()
+
+        println "[INFO] Linking template ${templateName} into ${org}/${repo}"
+
+        exec {
+            ignoreExitValue true
+            commandLine "git", "remote", "add", templateName, templateRepo
+        }
+        exec {
+            commandLine "git", "fetch", templateName, "main"
+        }
+
+        def subtreeAdd = exec {
+            ignoreExitValue true
+            commandLine "git", "subtree", "add", "--prefix=.", templateName, "main", "--squash"
+        }
+        if (subtreeAdd.exitValue != 0) {
+            println "[WARN] Subtree add failed, trying squash merge"
+            def merge = exec {
+                ignoreExitValue true
+                commandLine "git", "merge", "--squash", "--allow-unrelated-histories", "${templateName}/main"
+            }
+            if (merge.exitValue != 0) {
+                throw new GradleException("Merge failed, conflicts must be resolved")
+            }
+        }
+
+        def diff = exec {
+            ignoreExitValue true
+            commandLine "git", "diff", "--cached", "--quiet"
+        }
+        if (diff.exitValue != 0) {
+            exec {
+                commandLine "git", "commit", "-m", "Link template remote: ${templateName}"
+            }
+            def pushUrl = "https://${adminUser}:${githubToken}@github.com/${org}/${repo}.git"
+            def push = exec {
+                ignoreExitValue true
+                commandLine "git", "push", pushUrl, "HEAD:main"
+            }
+            if (push.exitValue != 0) {
+                throw new GradleException("Push failed")
+            }
+            println "[SUCCESS] Template linked and pushed"
+        } else {
+            println "[SUCCESS] No changes to commit"
+        }
+    }
+}
+
+task syncTemplate(dependsOn: prepareEnv) {
+    group = "automation"
+    description = "Sync template repo into current project"
+
+    doLast {
+        def templateRepo = System.getenv("TEMPLATE_REPO")
+        def adminUser    = System.getenv("ADMIN_USER")
+        def githubToken  = System.getenv("GITHUB_TOKEN")
+
+        if (!templateRepo || !adminUser || !githubToken) {
+            throw new GradleException("Missing required environment variables")
+        }
+
+        def resolved = resolveOrgRepo()
+        def org  = resolved.org
+        def repo = resolved.repo
+
+        def templateName = templateRepo.replaceAll(/\.git$/, "").tokenize("/").last()
+
+        println "[INFO] Adding remote for template: ${templateName}"
+        exec {
+            commandLine "git", "remote", "add", templateName, templateRepo
+        }
+        // ignore if already exists
+        exec {
+            commandLine "git", "fetch", templateName, "main"
+        }
+
+        // Try subtree add first
+        def subtreeAdd = exec {
+            ignoreExitValue true
+            commandLine "git", "subtree", "add", "--prefix=.", templateName, "main", "--squash"
+        }
+        if (subtreeAdd.exitValue != 0) {
+            println "[WARN] Subtree add failed, trying squash merge"
+            def merge = exec {
+                ignoreExitValue true
+                commandLine "git", "merge", "--squash", "--allow-unrelated-histories", "${templateName}/main"
+            }
+            if (merge.exitValue != 0) {
+                throw new GradleException("Merge failed, conflicts must be resolved")
+            }
+        }
+
+        // Commit if staged changes exist
+        def diff = exec {
+            ignoreExitValue true
+            commandLine "git", "diff", "--cached", "--quiet"
+        }
+        if (diff.exitValue != 0) {
+            exec {
+                commandLine "git", "commit", "-m", "Link template remote: ${templateName}"
+            }
+            def pushUrl = "https://${adminUser}:${githubToken}@github.com/${org}/${repo}.git"
+            def push = exec {
+                ignoreExitValue true
+                commandLine "git", "push", pushUrl, "HEAD:main"
+            }
+            if (push.exitValue != 0) {
+                throw new GradleException("Push failed")
+            }
+            println "[SUCCESS] Template linked and pushed"
+        } else {
+            println "[SUCCESS] No changes to commit"
+        }
+    }
+}
+
 
