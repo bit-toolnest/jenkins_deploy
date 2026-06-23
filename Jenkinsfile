@@ -40,17 +40,21 @@ pipeline {
             }
         }
 
-        stage('Sync Template') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'github-creds',
-                    usernameVariable: 'ADMIN_USER',
-                    passwordVariable: 'GITHUB_TOKEN'
-                )]) {
-                    sh "./gradlew syncTemplate"
-                }
-            }
-        }
+		stage('Sync Template') {
+		    when {
+		        expression { return false } // always skip
+		    }
+		    steps {
+		        withCredentials([usernamePassword(
+		            credentialsId: 'github-creds',
+		            usernameVariable: 'ADMIN_USER',
+		            passwordVariable: 'GITHUB_TOKEN'
+		        )]) {
+		            sh "./gradlew syncTemplate"
+		        }
+		    }
+		}
+
 
         stage('Sandbox Test') {
             steps {
