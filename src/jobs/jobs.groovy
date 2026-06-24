@@ -30,10 +30,13 @@ organizationFolder("${GITHUB_ORG}-org") {
     }
 
     projectFactories {
-        workflowBranchProjectFactory {
-            scriptPath("${JENKINSFILE_PATH}")
+        configure { node ->
+            def wfFactory = node.appendNode(
+                'org.jenkinsci.plugins.workflow.multibranch.WorkflowBranchProjectFactory'
+            )
+            wfFactory.appendNode('scriptPath', "${JENKINSFILE_PATH}")
         }
-    }
+    }    
 
     orphanedItemStrategy {
         defaultOrphanedItemStrategy {
