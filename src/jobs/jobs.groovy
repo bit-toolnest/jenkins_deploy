@@ -1,4 +1,3 @@
-// GitHub Organization Folder job
 organizationFolder("${GITHUB_ORG}-org") {
 
     description("GitHub Organization Folder for ${GITHUB_ORG} — scans all repos")
@@ -11,26 +10,28 @@ organizationFolder("${GITHUB_ORG}-org") {
             credentialsId("${CREDENTIALS_ID}")
 
             traits {
-                // Discover branches (but restrict to main only)
+                // Discover branch heads (main only)
                 gitHubBranchDiscovery {
-                    strategyId(1) // build branch heads
+                    strategyId(1) // maps to BranchDiscoveryTrait(strategyId=1)
                 }
-                headWildcardFilter {
+
+                // Restrict branch discovery to main
+                wildcardFilter {
                     includes("main")
                     excludes("*")
                 }
-                // Discover PRs from same repo, build merged with target branch
+
+                // Discover PRs from origin, build merged with target branch
                 gitHubPullRequestDiscovery {
-                    strategyId(2)
+                    strategyId(2) // maps to OriginPullRequestDiscoveryTrait(strategyId=2)
                 }
             }
         }
     }
 
     projectFactories {
-            workflowMultiBranchProjectFactory {
-                scriptPath("${JENKINSFILE_PATH}")
-            }
+        workflowBranchProjectFactory {
+            scriptPath("${JENKINSFILE_PATH}")
         }
     }
 
@@ -38,16 +39,15 @@ organizationFolder("${GITHUB_ORG}-org") {
         defaultOrphanedItemStrategy {
             pruneDeadBranches(true)
             daysToKeepStr("-1")
-            numToKeepStr("20")   // keep last 20 builds per branch
+            numToKeepStr("20")
             abortBuilds(false)
         }
     }
 
-    // Enable triggers so Jenkins rescans and builds on push/PR events
     triggers {
-        // Periodic rescan every 15 minutes
         periodicFolderTrigger {
-            interval("900000")
+            spec("H/15 * * * *") // cron spec for 15‑minute rescan
+            interval("900000")   // 15 minutes in ms
         }
     }
 }
