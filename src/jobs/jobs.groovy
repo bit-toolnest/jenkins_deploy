@@ -30,8 +30,10 @@ organizationFolder("${GITHUB_ORG}-org") {
     }
 
     projectFactories {
-        workflowBranchProjectFactory {
-            scriptPath("${JENKINSFILE_PATH}")
+        factory {
+            workflowBranchProjectFactory {
+                scriptPath("${JENKINSFILE_PATH}")
+            }
         }
     }
 
