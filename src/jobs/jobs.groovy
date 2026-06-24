@@ -16,9 +16,9 @@ organizationFolder("${GITHUB_ORG}-org") {
                 }
 
                 // Restrict branch discovery to main
-                wildcardFilter {
+                headWildcardFilter {
                     includes("main")
-                    excludes("*")
+                    excludes("") 
                 }
 
                 // Discover PRs from origin, build merged with target branch
