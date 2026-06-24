@@ -120,12 +120,12 @@ task cleanBuildDir {
 
 // -------------------- TEST SANDBOX --------------------
 task testSandbox {
-    description = "Run installer tests inside Docker sandbox via test/test_vector.sh"
+    description = "Run installer tests inside Docker sandbox via test/test_suite.sh"
     group = "verification"
 
     doLast {
         println "Running sandbox tests..."
-        def testScript = file("${rootProject.projectDir}/test/test_vector.sh")
+        def testScript = file("${rootProject.projectDir}/test/test_suite.sh")
         def envScript = file("${rootProject.projectDir}/set_env.sh")
 
         if (!testScript.exists()) {
@@ -291,6 +291,5 @@ task syncTemplate(dependsOn: prepareEnv) {
         }
     }
 }
-
 
 
