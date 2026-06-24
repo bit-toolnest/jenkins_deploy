@@ -16,14 +16,14 @@ organizationFolder("${GITHUB_ORG}-org") {
                 }
 
                 // Restrict branch discovery to main
-                headWildcardFilter {
-                    includes("main")
-                    excludes("") 
-                }
+              //  headWildcardFilter {
+              //      includes("main")
+              //      excludes("") 
+              //  }
 
                 // Discover PRs from origin, build merged with target branch
                 gitHubPullRequestDiscovery {
-                    strategyId(2) // maps to OriginPullRequestDiscoveryTrait(strategyId=2)
+                    strategyId(1) // maps to OriginPullRequestDiscoveryTrait(strategyId=1)
                 }
             }
         }
