@@ -49,8 +49,8 @@ organizationFolder("${GITHUB_ORG}-org") {
 
     triggers {
         periodicFolderTrigger {
-            spec("H/15 * * * *") // cron spec for 15‑minute rescan
-            interval("900000")   // 15 minutes in ms
+            interval("900000") // 15 minutes in ms
         }
     }
+
 }
