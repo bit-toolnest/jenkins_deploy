@@ -48,7 +48,6 @@ organizationFolder("${GITHUB_ORG}-org") {
     }
 
     triggers {
-        githubPush()
         periodicFolderTrigger {
             interval("1d") // 1 day
         }
