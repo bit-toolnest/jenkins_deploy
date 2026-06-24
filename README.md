@@ -218,5 +218,5 @@ Steps:
 - Ready for CI/CD pipelines and branch protection rules  
 ```
 
-# End of Task
+# Follow the steps to get the task completed
 
