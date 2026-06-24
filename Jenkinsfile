@@ -41,9 +41,6 @@ pipeline {
         }
 
 		stage('Sync Template') {
-		    when {
-		        expression { return false } // always skip
-		    }
 		    steps {
 		        withCredentials([usernamePassword(
 		            credentialsId: 'github-creds',
