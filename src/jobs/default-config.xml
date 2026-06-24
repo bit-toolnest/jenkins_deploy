@@ -31,8 +31,8 @@
       <templates>
         <!-- Periodic scan of the org folder -->
         <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
-          <spec>H/15 * * * *</spec> <!-- scan every 15 minutes -->
-          <interval>900000</interval>
+          <spec>H H * * *</spec> <!-- scan once per day -->
+          <interval>86400000</interval> <!-- 24 hours in ms -->
         </com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
       </templates>
     </jenkins.branch.OrganizationChildTriggersProperty>
@@ -59,8 +59,8 @@
 
   <triggers>
     <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
-      <spec>H/15 * * * *</spec>
-      <interval>900000</interval>
+      <spec>H H * * *</spec> <!-- scan once per day -->
+      <interval>86400000</interval> <!-- 24 hours in ms -->
     </com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger>
   </triggers>
 
