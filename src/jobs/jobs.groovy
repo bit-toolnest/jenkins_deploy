@@ -49,7 +49,7 @@ organizationFolder("${GITHUB_ORG}-org") {
 
     triggers {
         periodicFolderTrigger {
-            interval("900000") // 15 minutes in ms
+            interval("1d") // 1 day
         }
     }
 
