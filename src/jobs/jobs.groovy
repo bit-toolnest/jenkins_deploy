@@ -16,10 +16,10 @@ organizationFolder("${GITHUB_ORG}-org") {
                 }
 
                 // Restrict branch discovery to main
-                //headWildcardFilter {
-                //    includes("main")
-                //    excludes("") 
-                //}
+                headWildcardFilter {
+                    includes("main")
+                    excludes("") 
+                }
 
                 // Discover PRs from origin, build merged with target branch
                 gitHubPullRequestDiscovery {
