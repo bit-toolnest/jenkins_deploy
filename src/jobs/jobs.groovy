@@ -23,7 +23,7 @@ organizationFolder("${GITHUB_ORG}-org") {
 
                 // Discover PRs from origin, build merged with target branch
                 gitHubPullRequestDiscovery {
-                    strategyId(1) // maps to OriginPullRequestDiscoveryTrait(strategyId=1)
+                    strategyId(2) // maps to OriginPullRequestDiscoveryTrait(strategyId=2)
                 }
             }
         }
