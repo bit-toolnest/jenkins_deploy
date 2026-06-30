@@ -132,7 +132,7 @@ TARGET_DIR="/opt/scripts"
 
 sudo mkdir -p "$TARGET_DIR"
 
-for script in branch-protection.sh remove-flag.sh update-stack.sh gradlew-permission.sh add-template-remote.sh sync-template.sh; do
+for script in branch-protection.sh remove-flag.sh update-stack.sh gradlew-permission.sh sync-template.sh; do
   if [ -f "$REPO_INIT_DIR/$script" ]; then
     sudo cp "$REPO_INIT_DIR/$script" "$TARGET_DIR/$script"
     sudo chmod +x "$TARGET_DIR/$script"
