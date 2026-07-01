@@ -9,6 +9,33 @@ pipeline {
             }
         }
 
+stage('Validate Build') {
+    steps {
+        script {
+            echo "BRANCH_NAME=${env.BRANCH_NAME}"
+            echo "CHANGE_ID=${env.CHANGE_ID}"
+            echo "CHANGE_BRANCH=${env.CHANGE_BRANCH}"
+            echo "CHANGE_TARGET=${env.CHANGE_TARGET}"
+
+            if (env.CHANGE_ID) {
+                // This is a PR build
+                if (env.CHANGE_TARGET == 'main') {
+                    echo "Pull Request targeting main"
+                    return
+                } else {
+                    currentBuild.result = 'NOT_BUILT'
+                    error("Build skipped. Pull requests must target 'main'.")
+                }
+            } else {
+                // Normal branch build (main or any other branch)
+                echo "Branch build: ${env.BRANCH_NAME}"
+                return
+            }
+        }
+    }
+}
+		
+
         stage('Init Variables') {
             steps {
                 script {
@@ -31,31 +58,14 @@ pipeline {
                     passwordVariable: 'GITHUB_TOKEN'
                 )]) {
                     sh """
-                        /opt/scripts/gradlew-permission.sh ${env.REPO} ${env.ORG}
-			            ./gradlew linkTemplateRepo
+                        /opt/scripts/sync-template.sh ${env.REPO} ${env.ORG} ${env.TEMPLATE_REPO}
+						/opt/scripts/gradlew-permission.sh ${env.REPO} ${env.ORG}
                         /opt/scripts/remove-flag.sh ${env.REPO} ${env.ORG}
                         /opt/scripts/branch-protection.sh ${env.REPO} ${env.ORG}
                     """
                 }
             }
         }
-
-		stage('Sync Template') {
-		    when {
-		        expression { return false } // always skip
-		    }
-		    steps {
-		        withCredentials([usernamePassword(
-		            credentialsId: 'github-creds',
-		            usernameVariable: 'ADMIN_USER',
-		            passwordVariable: 'GITHUB_TOKEN'
-		        )]) {
-		            sh "./gradlew syncTemplate"
-		        }
-		    }
-		}
-
-
         stage('Sandbox Test') {
             steps {
                 sh './gradlew testSandbox'
