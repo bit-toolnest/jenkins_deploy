@@ -53,23 +53,14 @@ git fetch "$TEMPLATE_NAME"
 PRE_MERGE_HEAD=$(git rev-parse HEAD)
 
 #
-# Merge
+# Merge (squash to avoid auto commit)
 #
-echo "[INFO] Merging template..."
+echo "[INFO] Merging template with squash..."
 
-if ! git merge -X theirs "${TEMPLATE_NAME}/main"; then
-
-    echo "[INFO] Normal merge failed."
-
-    git merge --abort 2>/dev/null || true
-
+if ! git merge --squash -X theirs "${TEMPLATE_NAME}/main"; then
+    echo "[INFO] Normal squash merge failed."
     echo "[INFO] Retrying with --allow-unrelated-histories..."
-
-    if ! git merge \
-        --allow-unrelated-histories \
-        -X theirs \
-        "${TEMPLATE_NAME}/main"; then
-
+    if ! git merge --squash --allow-unrelated-histories -X theirs "${TEMPLATE_NAME}/main"; then
         echo "[ERROR] Merge failed."
         echo "[ERROR] Manual conflict resolution required."
         exit 1
@@ -77,27 +68,18 @@ if ! git merge -X theirs "${TEMPLATE_NAME}/main"; then
 fi
 
 #
-# Restore repository specific files
+# Restore repository specific files BEFORE commit
 #
 if [[ -f "$IGNORE_FILE" ]]; then
-
     echo "[INFO] Restoring repository-specific paths..."
-
     while IFS= read -r path || [[ -n "$path" ]]; do
-
-        # Trim whitespace
         path="$(echo "$path" | xargs)"
-
-        # Skip comments and blank lines
         [[ -z "$path" || "$path" =~ ^# ]] && continue
-
         if git cat-file -e "${PRE_MERGE_HEAD}:${path}" 2>/dev/null; then
             echo "  -> ${path}"
             git restore --source="${PRE_MERGE_HEAD}" -- "${path}"
         fi
-
     done < "$IGNORE_FILE"
-
 fi
 
 #
@@ -114,11 +96,11 @@ if git diff --cached --quiet; then
 fi
 
 #
-# Commit
+# Commit (single commit with template changes minus ignores)
 #
 echo "[INFO] Creating commit..."
-
 git commit -m "Sync template: ${TEMPLATE_NAME}"
+
 
 #
 # Push
